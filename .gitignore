@@ -22,7 +22,8 @@ wheels/
 
 # PyInstaller
 *.manifest
-*.spec
+# Note: We want to keep .spec files in pyinstaller/ folder
+# *.spec
 
 # IDE
 .vscode/
