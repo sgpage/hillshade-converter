@@ -73,14 +73,21 @@ The output MBTiles file can be used with mapping libraries like Mapbox GL, Leafl
 ### macOS Build
 
 ```bash
+# Create and activate virtual environment (recommended)
+python3 -m venv .venv
+source .venv/bin/activate
+
 # Install dependencies
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 
 # Build app
 ./build_scripts/build_mac.sh
 
 # (Optional) Code-sign the app
 ./build_scripts/sign_mac.sh
+
+# (Recommended) Notarize the app
+./build_scripts/notarize_mac.sh
 
 # Package for release
 tar -czf Hillshade_Converter_macOS_arm64.tar.gz -C dist Hillshade\ Converter.app
@@ -89,8 +96,12 @@ tar -czf Hillshade_Converter_macOS_arm64.tar.gz -C dist Hillshade\ Converter.app
 ### Windows Build
 
 ```bash
+# Create and activate virtual environment (recommended)
+python -m venv .venv
+.venv\Scripts\activate
+
 # Install dependencies
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 
 # Build executable
 build_scripts\build_windows.bat
@@ -99,34 +110,31 @@ build_scripts\build_windows.bat
 7z a Hillshade_Converter_Windows.zip dist\hillshade_converter.exe
 ```
 
-## Code Signing for Mac Distribution
+## Code Signing & Notarization for Mac Distribution
 
-To sign your builds with your Apple Developer certificate:
+To sign and notarize your builds with your Apple Developer certificate:
 
 1. Install your Developer ID Application certificate in Keychain
 2. Run: `./build_scripts/sign_mac.sh`
 3. When prompted, enter your certificate name (e.g., "Developer ID Application: Your Name (TEAMID)")
+4. Run: `./build_scripts/notarize_mac.sh` (requires Apple Developer account)
 
-This allows users to run the app without App Store warnings about "unidentified developers."
+This allows users to run the app without any macOS security warnings.
 
-### Optional: Notarization
+### Notarization Setup (One-Time)
 
-For macOS Big Sur (11.0) and later, you can notarize the app for additional trust:
+For macOS Big Sur (11.0) and later, notarization is strongly recommended:
 
 ```bash
-# Notarize the signed app
-xcrun altool --notarize-app \
-  -f dist/Hillshade\ Converter.app.zip \
-  -t osx \
-  --file-type zip \
-  --primary-bundle-id co.pagetech.hillshade-converter \
-  -u your@email.com \
-  -p @keychain:app-specific-password
+# 1. Get app-specific password from https://appleid.apple.com
+# 2. Store credentials in Keychain
+xcrun notarytool store-credentials "pagetech-notary" \
+  --apple-id "your@email.com" \
+  --team-id "YOUR_TEAM_ID" \
+  --password "xxxx-xxxx-xxxx-xxxx"
 
-# Wait for status (check email or use request UUID)
-xcrun altool --notarization-info <REQUEST_UUID> \
-  -u your@email.com \
-  -p @keychain:app-specific-password
+# 3. Run the notarization script
+./build_scripts/notarize_mac.sh
 ```
 
 ## License

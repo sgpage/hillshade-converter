@@ -18,6 +18,7 @@ git push -u origin main
 ```bash
 chmod +x build_scripts/build_mac.sh
 chmod +x build_scripts/sign_mac.sh
+chmod +x build_scripts/notarize_mac.sh
 ```
 
 ### 3. Build Locally
@@ -63,6 +64,32 @@ When prompted, enter your certificate name exactly as shown above.
 codesign -d --verbose=4 "dist/Hillshade Converter.app"
 ```
 
+## Notarization (Recommended)
+
+### One-Time Setup
+
+```bash
+# Get app-specific password from https://appleid.apple.com
+# Store credentials securely
+xcrun notarytool store-credentials "pagetech-notary" \
+  --apple-id "your@email.com" \
+  --team-id "YOUR_TEAM_ID" \
+  --password "xxxx-xxxx-xxxx-xxxx"
+```
+
+### Notarize Your Build
+
+```bash
+./build_scripts/notarize_mac.sh
+```
+
+This script will:
+1. Create a zip archive of the signed app
+2. Submit to Apple for notarization
+3. Wait for approval (typically 2-5 minutes)
+4. Staple the notarization ticket to the app
+5. Verify Gatekeeper acceptance
+
 ## Creating Releases
 
 ### macOS Release
@@ -71,8 +98,11 @@ codesign -d --verbose=4 "dist/Hillshade Converter.app"
 # Build the app
 ./build_scripts/build_mac.sh
 
-# Sign it (optional but recommended)
+# Sign it (recommended)
 ./build_scripts/sign_mac.sh
+
+# Notarize it (recommended for public distribution)
+./build_scripts/notarize_mac.sh
 
 # For Apple Silicon (M1/M2/M3)
 tar -czf Hillshade_Converter_macOS_arm64.tar.gz -C dist "Hillshade Converter.app"
@@ -180,33 +210,30 @@ You can create a simple `version.json` file in your repo for auto-update checkin
 
 ## Notarization (macOS, Recommended)
 
-For macOS 11+, notarization adds an extra layer of trust:
+For macOS 11+, notarization is strongly recommended. Use the automated script:
+
+```bash
+./build_scripts/notarize_mac.sh
+```
+
+Or manually:
 
 ```bash
 # Create a zip of the signed app
-ditto -c -k --sequesterRsrc \
+ditto -c -k --sequesterRsrc --keepParent \
   "dist/Hillshade Converter.app" \
-  Hillshade_Converter_macOS.zip
+  Hillshade_Converter_macOS_arm64.zip
 
-# Notarize
-xcrun altool --notarize-app \
-  -f Hillshade_Converter_macOS.zip \
-  -t osx \
-  --file-type zip \
-  --primary-bundle-id co.pagetech.hillshade-converter \
-  -u your-apple-id@apple.com \
-  -p $(security find-generic-password -gs "app-specific-password" -w)
-```
+# Submit for notarization (requires stored credentials)
+xcrun notarytool submit Hillshade_Converter_macOS_arm64.zip \
+  --keychain-profile "pagetech-notary" \
+  --wait
 
-Check status and staple when complete:
-
-```bash
-# Check status (use the Request UUID from the response above)
-xcrun altool --notarization-info <REQUEST_UUID> \
-  -u your-apple-id@apple.com
-
-# When approved, staple the notarization to the app
+# Staple the notarization ticket
 xcrun stapler staple "dist/Hillshade Converter.app"
+
+# Verify
+spctl -a -vv "dist/Hillshade Converter.app"
 ```
 
 ## Troubleshooting
@@ -233,10 +260,12 @@ xcrun stapler staple "dist/Hillshade Converter.app"
 **Your distribution workflow:**
 1. Make changes → Commit to GitHub
 2. Create release tags (`v1.0.0`)
-3. Run build scripts
-4. Sign macOS builds
-5. Upload to GitHub Releases
-6. Update downloads on pagetech.co.uk
-7. Share releases!
+3. Run build scripts (`./build_scripts/build_mac.sh`)
+4. Sign macOS builds (`./build_scripts/sign_mac.sh`)
+5. Notarize macOS builds (`./build_scripts/notarize_mac.sh`)
+6. Package releases (`.tar.gz` or `.zip`)
+7. Upload to GitHub Releases
+8. Update downloads on pagetech.co.uk
+9. Share releases!
 
-The code signing with your Apple certificate means users can run the app without App Store warnings.
+Notarization ensures users can download and run your app without any macOS security warnings.

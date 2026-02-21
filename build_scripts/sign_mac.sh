@@ -5,6 +5,10 @@
 
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$ROOT_DIR"
+
 APP_PATH="dist/Hillshade Converter.app"
 TEAM_ID="YOUR_TEAM_ID"  # Change this to your Apple Team ID
 
@@ -19,7 +23,7 @@ echo ""
 
 # Find available certificates
 echo "Available Developer ID Certificates:"
-security find-certificate -c "Developer ID Application" | grep "alis" | sed 's/.*alis"\(.*\)"/\1/'
+security find-identity -v -p codesigning | grep "Developer ID Application" || true
 echo ""
 
 # Prompt for certificate name
@@ -32,7 +36,7 @@ fi
 
 # Sign the entire app bundle
 echo "Signing app with certificate: $CERT_NAME"
-codesign -v --deep --strict --options=runtime --entitlements entitlements.plist --sign "$CERT_NAME" "$APP_PATH"
+codesign --force --deep --strict --options=runtime --timestamp --entitlements entitlements.plist --sign "$CERT_NAME" "$APP_PATH"
 
 # Verify signature
 echo ""
@@ -43,4 +47,8 @@ codesign -v "$APP_PATH"
 
 echo ""
 echo "Signature details:"
-codesign -d --verbose=4 "$APP_PATH" 2>&1 | head -20
+codesign -d --verbose=4 "$APP_PATH" 2>&1 | head -30
+
+echo ""
+echo "Gatekeeper assessment:"
+spctl -a -vv "$APP_PATH" || true

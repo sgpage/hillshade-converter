@@ -4,18 +4,28 @@
 
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$ROOT_DIR"
+
 echo "🏗️  Building Hillshade Converter for macOS..."
 echo ""
 
-# Check Python
-if ! command -v python3 &> /dev/null; then
+# Pick Python interpreter (.venv preferred)
+if [ -x ".venv/bin/python" ]; then
+    PYTHON_BIN=".venv/bin/python"
+    echo "🐍 Using virtual environment: .venv"
+elif command -v python3 &> /dev/null; then
+    PYTHON_BIN="python3"
+    echo "🐍 Using system Python: $(python3 --version)"
+else
     echo "❌ Python 3 not found. Please install Python 3.8+"
     exit 1
 fi
 
 # Install dependencies
 echo "📦 Installing dependencies..."
-pip install -r requirements.txt
+"$PYTHON_BIN" -m pip install -r requirements.txt
 
 # Clean previous builds
 if [ -d "build" ]; then
@@ -25,7 +35,7 @@ fi
 
 # Build with PyInstaller
 echo "🔨 Building with PyInstaller..."
-pyinstaller pyinstaller/hillshade_mac.spec
+"$PYTHON_BIN" -m PyInstaller pyinstaller/hillshade_mac.spec
 
 echo ""
 echo "✅ Build complete!"
