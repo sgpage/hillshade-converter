@@ -23,6 +23,16 @@ if getattr(sys, 'frozen', False):
     bin_path = os.path.join(base_path, 'bin')
     if os.path.exists(bin_path):
         os.environ['PATH'] = bin_path + os.pathsep + os.environ.get('PATH', '')
+        # Windows only: add bin dir to DLL search path
+        if hasattr(os, 'add_dll_directory'):
+            os.add_dll_directory(bin_path)
+    # Set GDAL/PROJ data paths so bundled CLI tools can find their data files
+    gdal_data = os.path.join(base_path, 'gdal_data')
+    proj_data = os.path.join(base_path, 'proj_data')
+    if os.path.isdir(gdal_data):
+        os.environ['GDAL_DATA'] = gdal_data
+    if os.path.isdir(proj_data):
+        os.environ['PROJ_LIB'] = proj_data
 
 
 class HillshadeConverter:
