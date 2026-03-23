@@ -51,6 +51,7 @@ class HillshadeConverter:
         self.is_processing = False
         self.preview_window = None
         self.preview_hillshade_path = None
+        self.preview_image = None  # Full-resolution PIL image for export
         
         self.create_ui()
         self.check_gdal()
@@ -276,7 +277,7 @@ class HillshadeConverter:
         
         self.preview_window = tk.Toplevel(self.root)
         self.preview_window.title("Hillshade Preview")
-        self.preview_window.geometry("800x650")
+        self.preview_window.geometry("800x750")
         
         # Read and display the hillshade using PIL
         try:
@@ -293,17 +294,19 @@ class HillshadeConverter:
             # Open with PIL
             img = Image.open(temp_png)
             width, height = img.size
+            self.preview_image = img.copy()  # Save full-res copy for export
             
-            # Resize for display if too large
-            max_display_size = 750
+            # Resize for display if too large (leave room for info + buttons)
+            max_display_size = 580
+            display_img = img
             if width > max_display_size or height > max_display_size:
                 scale = min(max_display_size / width, max_display_size / height)
                 new_width = int(width * scale)
                 new_height = int(height * scale)
-                img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+                display_img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
             
             # Convert to PhotoImage
-            photo = ImageTk.PhotoImage(img)
+            photo = ImageTk.PhotoImage(display_img)
             
             # Display in label
             preview_label = ttk.Label(self.preview_window, image=photo)
@@ -331,6 +334,8 @@ class HillshadeConverter:
             
             ttk.Button(btn_frame, text="Regenerate with New Parameters", 
                       command=lambda: [self.preview_window.destroy(), self.start_preview()]).pack(side="left", padx=5)
+            ttk.Button(btn_frame, text="Export PNG", 
+                      command=self.export_preview_png).pack(side="left", padx=5)
             ttk.Button(btn_frame, text="Close", 
                       command=self.preview_window.destroy).pack(side="left", padx=5)
             
@@ -339,6 +344,36 @@ class HillshadeConverter:
             if self.preview_window and self.preview_window.winfo_exists():
                 self.preview_window.destroy()
     
+    def export_preview_png(self):
+        """Save the current preview image as a PNG file"""
+        if self.preview_image is None:
+            messagebox.showerror("Error", "No preview image available to export")
+            return
+
+        # Suggest a filename based on the input file
+        input_file = self.input_path.get()
+        default_name = (Path(input_file).stem + "_hillshade_preview.png") if input_file else "hillshade_preview.png"
+        default_dir = str(Path(input_file).parent) if input_file else str(Path.home())
+
+        save_path = filedialog.asksaveasfilename(
+            title="Export Preview PNG",
+            initialdir=default_dir,
+            initialfile=default_name,
+            defaultextension=".png",
+            filetypes=[("PNG files", "*.png"), ("All files", "*.*")]
+        )
+
+        if not save_path:
+            return
+
+        try:
+            self.preview_image.save(save_path, format="PNG")
+            self.log(f"✓ Preview exported to: {save_path}")
+            messagebox.showinfo("Exported", f"Preview saved to:\n{save_path}")
+        except Exception as e:
+            self.log(f"✗ Export failed: {e}")
+            messagebox.showerror("Export Failed", f"Could not save PNG:\n{e}")
+
     def start_conversion(self):
         """Start conversion in background thread"""
         if self.is_processing:

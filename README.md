@@ -86,9 +86,6 @@ python -m pip install -r requirements.txt
 # (Optional) Code-sign the app
 ./build_scripts/sign_mac.sh
 
-# (Recommended) Notarize the app
-./build_scripts/notarize_mac.sh
-
 # Package for release
 tar -czf Hillshade_Converter_macOS_arm64.tar.gz -C dist Hillshade\ Converter.app
 ```
@@ -110,31 +107,34 @@ build_scripts\build_windows.bat
 7z a Hillshade_Converter_Windows.zip dist\hillshade_converter.exe
 ```
 
-## Code Signing & Notarization for Mac Distribution
+## Code Signing for Mac Distribution
 
-To sign and notarize your builds with your Apple Developer certificate:
+To sign your builds with your Apple Developer certificate:
 
 1. Install your Developer ID Application certificate in Keychain
 2. Run: `./build_scripts/sign_mac.sh`
 3. When prompted, enter your certificate name (e.g., "Developer ID Application: Your Name (TEAMID)")
-4. Run: `./build_scripts/notarize_mac.sh` (requires Apple Developer account)
 
-This allows users to run the app without any macOS security warnings.
+This allows users to run the app without App Store warnings about "unidentified developers."
 
-### Notarization Setup (One-Time)
+### Optional: Notarization
 
-For macOS Big Sur (11.0) and later, notarization is strongly recommended:
+For macOS Big Sur (11.0) and later, you can notarize the app for additional trust:
 
 ```bash
-# 1. Get app-specific password from https://appleid.apple.com
-# 2. Store credentials in Keychain
-xcrun notarytool store-credentials "pagetech-notary" \
-  --apple-id "your@email.com" \
-  --team-id "YOUR_TEAM_ID" \
-  --password "xxxx-xxxx-xxxx-xxxx"
+# Notarize the signed app
+xcrun altool --notarize-app \
+  -f dist/Hillshade\ Converter.app.zip \
+  -t osx \
+  --file-type zip \
+  --primary-bundle-id co.pagetech.hillshade-converter \
+  -u your@email.com \
+  -p @keychain:app-specific-password
 
-# 3. Run the notarization script
-./build_scripts/notarize_mac.sh
+# Wait for status (check email or use request UUID)
+xcrun altool --notarization-info <REQUEST_UUID> \
+  -u your@email.com \
+  -p @keychain:app-specific-password
 ```
 
 ## License
