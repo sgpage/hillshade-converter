@@ -36,6 +36,7 @@ wheels/
 .DS_Store
 *.app
 *.dmg
+*.zip
 
 # Windows
 Thumbs.db
