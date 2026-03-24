@@ -11,6 +11,7 @@ import os
 import sys
 import tempfile
 import shutil
+import webbrowser
 from pathlib import Path
 import threading
 from PIL import Image, ImageTk
@@ -55,6 +56,8 @@ class HillshadeConverter:
         
         self.create_ui()
         self.check_gdal()
+        # Show promotional popup shortly after launch
+        self.root.after(800, self.show_promo_popup)
     
     def create_ui(self):
         # Title
@@ -135,8 +138,64 @@ class HillshadeConverter:
         self.convert_btn.pack(side="left", padx=5)
         
         ttk.Button(button_frame, text="Clear Log", command=self.clear_log).pack(side="left", padx=5)
+        ttk.Button(button_frame, text="About", command=self.show_promo_popup).pack(side="left", padx=5)
         ttk.Button(button_frame, text="Exit", command=self.root.quit).pack(side="right", padx=5)
     
+    def show_promo_popup(self):
+        """Show a promotional popup for DetectLogPro and pagetech.co.uk"""
+        popup = tk.Toplevel(self.root)
+        popup.title("From the Developer")
+        popup.geometry("420x320")
+        popup.resizable(False, False)
+        popup.grab_set()  # Modal
+
+        # Centre relative to main window
+        self.root.update_idletasks()
+        x = self.root.winfo_x() + (self.root.winfo_width() - 420) // 2
+        y = self.root.winfo_y() + (self.root.winfo_height() - 320) // 2
+        popup.geometry(f"+{x}+{y}")
+
+        outer = ttk.Frame(popup, padding=20)
+        outer.pack(fill="both", expand=True)
+
+        # Header
+        ttk.Label(outer, text="Also from PageTech",
+                  font=("Arial", 14, "bold")).pack(pady=(0, 4))
+        ttk.Separator(outer, orient="horizontal").pack(fill="x", pady=6)
+
+        # DetectLogPro callout
+        ttk.Label(outer, text="DetectLogPro",
+                  font=("Arial", 13, "bold")).pack()
+        ttk.Label(
+            outer,
+            text=(
+                "Professional metal-detector log management for macOS.\n"
+                "Record finds, track locations, attach photos, and\n"
+                "export detailed reports — all in one elegant app."
+            ),
+            justify="center",
+            wraplength=360,
+            font=("Arial", 11),
+        ).pack(pady=8)
+
+        ttk.Separator(outer, orient="horizontal").pack(fill="x", pady=6)
+
+        # Website link
+        link = ttk.Label(outer, text="www.pagetech.co.uk",
+                         font=("Arial", 11, "underline"),
+                         foreground="#0066CC", cursor="hand2")
+        link.pack(pady=(0, 12))
+        link.bind("<Button-1>",
+                  lambda e: webbrowser.open("https://www.pagetech.co.uk"))
+
+        # Buttons
+        btn_frame = ttk.Frame(outer)
+        btn_frame.pack()
+        ttk.Button(btn_frame, text="Visit Website",
+                   command=lambda: webbrowser.open("https://www.pagetech.co.uk")).pack(side="left", padx=6)
+        ttk.Button(btn_frame, text="Close",
+                   command=popup.destroy).pack(side="left", padx=6)
+
     def check_gdal(self):
         """Check if GDAL is available and add Homebrew paths if needed"""
         # Common GDAL installation paths
