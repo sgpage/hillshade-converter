@@ -90,7 +90,7 @@ exe = EXE(
 app = BUNDLE(
     exe,
     name="Hillshade Converter.app",
-    icon=None,
+    icon="../assets/HillshadeIcon.png",
     bundle_identifier="co.pagetech.hillshade-converter",
     info_plist={
         "NSPrincipalClass": "NSApplication",

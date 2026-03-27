@@ -169,8 +169,8 @@ class HillshadeConverter:
         ttk.Label(
             outer,
             text=(
-                "Professional metal-detector log management for macOS.\n"
-                "Record finds, track locations, attach photos, and\n"
+                "Professional metal-detector log management for iOS, Android and Deskptops.\n"
+                "Record finds, track locations, attach photos, display historic maps and Lidar and\n"
                 "export detailed reports — all in one elegant app."
             ),
             justify="center",
